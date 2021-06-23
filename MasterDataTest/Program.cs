@@ -6,59 +6,50 @@ namespace MasterDataTest
 {
     public class Program
     {
-        private static EventWaitHandle ewh = new EventWaitHandle(false, EventResetMode.AutoReset);
         public static void Main(string[] args)
         {
-                AutomationElement root = AutomationElement.RootElement;
+            AutomationElement ae = AutomationElement.RootElement.FindFirst
+                (TreeScope.Descendants, new PropertyCondition
+                (AutomationElement.NameProperty, "MainWindow"));
 
-                AutomationElement targetApp = null;
-                bool inTime = false;    
-                try
+            AutomationElement main = ae.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, "Log In"));
+            InvokePattern ivkpt = main.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+            ivkpt.Invoke();
+
+            AutomationElement desk = AutomationElement.RootElement.FindFirst(TreeScope.Children, new PropertyCondition
+                (AutomationElement.NameProperty, "Подключение к myserver"));
+
+            if (desk != null)
+            {
+                AutomationElement log = desk.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "1002"));
+                AutomationElement loginfield = log.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.ClassNameProperty, "Edit"));
+                AutomationElement pass = desk.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "1005"));
+
+                object login = null;
+                object password = null;
+
+                Thread.Sleep(1000);
+
+                if (!loginfield.TryGetCurrentPattern(ValuePattern.Pattern, out login)) {}
+                else
                 {
-                    Thread findAppThread = new Thread(() =>
-                    {
-                            targetApp = root.FindFirst(TreeScope.Descendants,
-                            new PropertyCondition(AutomationElement.NameProperty, "MainWindow"));
-                        ewh.Set();
-                    });
-                    findAppThread.Start();
-                    inTime = ewh.WaitOne(1000, true);
-                    if (!inTime) throw new NullReferenceException();
+                    ((ValuePattern)login).SetValue("user12");
                 }
 
-                catch (NullReferenceException e)
+                Thread.Sleep(1000);
+
+                if (!pass.TryGetCurrentPattern(ValuePattern.Pattern, out password)){ }
+                else
                 {
-                    Thread.Sleep(1000);
-                    Environment.Exit(1);
+                    ((ValuePattern)password).SetValue("123451111");
                 }
-                AutomationElement logInButton = AutomationElement.RootElement.FindFirst(TreeScope.Descendants,
-                    new PropertyCondition(AutomationElement.NameProperty, "Log In"));
+                AutomationElement buttonOk = desk.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "1"));
 
-                if (logInButton.GetCurrentPattern(InvokePattern.Pattern) is InvokePattern pushLogBot) pushLogBot.Invoke(); else { }
+                Thread.Sleep(1000);
 
-                AutomationElement connectWindow = AutomationElement.RootElement.FindFirst(TreeScope.Descendants,
-                    new PropertyCondition(AutomationElement.NameProperty, "Connect to myserver"));
-
-                if (connectWindow.FindFirst(TreeScope.Descendants,
-                    new AndCondition(
-                        new PropertyCondition(AutomationElement.ClassNameProperty, "Edit"),
-                        new PropertyCondition(AutomationElement.NameProperty, "User name:")))
-                            .GetCurrentPattern(ValuePattern.Pattern) is ValuePattern loginFieldVp) loginFieldVp
-                            .SetValue("sandakov");
-
-                if (connectWindow.FindFirst(TreeScope.Descendants,
-                    new AndCondition(
-                        new PropertyCondition(AutomationElement.ClassNameProperty, "Edit"),
-                        new PropertyCondition(AutomationElement.NameProperty, "Password:")))
-                            .GetCurrentPattern(ValuePattern.Pattern) is ValuePattern passFieldVp) passFieldVp
-                            .SetValue("sandakov");
-
-                if (connectWindow.FindFirst(TreeScope.Descendants,
-                    new PropertyCondition(AutomationElement.NameProperty, "OK"))
-                        .GetCurrentPattern(InvokePattern.Pattern) is InvokePattern confirmButtonVp) confirmButtonVp
-                        .Invoke();
-
-                Console.WriteLine("Ok");
+                InvokePattern ivkp = buttonOk.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+                ivkp.Invoke();
+            }
         }
     }
 }
